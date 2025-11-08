@@ -1,6 +1,20 @@
-- name: Install necessary packages
-  hosts: aws_machines
+- hosts: all
+  gather_facts: false 
   become: true
+  pre_tasks:
+    - name: Wait 5 minutes for SSH connection to be usable
+      ansible.builtin.wait_for_connection:
+        sleep: 5
+        delay: 10
+        timeout: 300
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+- name: Install necessary packages
+  hosts: machines
+  become: true
+
   tasks:
    - name: Ensure apt cache is updated
      ansible.builtin.apt:
@@ -17,7 +31,7 @@
        state: present
 
 - name: Download, Install, and Setup NPB
-  hosts: aws_machines
+  hosts: machines
   become: false
   vars:
     ssh_user: ubuntu
@@ -77,8 +91,7 @@
       dest: ~/.ssh/id_ed25519 # Rename to default ssh priv key name
       remote_src: false
       mode: "0400"
-     run_once: true
-     delegate_to: "{{ groups['aws_machines'][0] }}"
+     when: inventory_hostname == groups['machines'][0]
 
    - name: Disable StrictHostKeyChecking for all users (stops mpirun from hanging)
      become: true
@@ -91,23 +104,25 @@
              LogLevel ERROR
        mode: '0644'
 
+   - name: Clean up now-useless folder
+     ansible.builtin.file:
+      path: ~/NPB3.4.3
+      state: absent
+
 - name: Copy over hosts and test files
-  hosts: aws_machines
+  hosts: machines
   become: false
   tasks:
    - name: Copy over hosts
      ansible.builtin.copy:
        src: ../hosts
-       dest: ~/
+       dest: ~/hosts
        mode: preserve
-     run_once: true
-     delegate_to: "{{ groups['aws_machines'][0] }}"
+     when: inventory_hostname == groups['machines'][0]
 
    - name: Copy over tests
      ansible.builtin.copy:
-       src: ../tests/
-       dest: ~/tests
+       src: ../tests
+       dest: ~/
        mode: preserve
-     run_once: true
-     delegate_to: "{{ groups['aws_machines'][0] }}"
-
+     when: inventory_hostname == groups['machines'][0]
