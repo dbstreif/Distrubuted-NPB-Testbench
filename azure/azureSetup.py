@@ -3,8 +3,8 @@ import ansible_runner
 import tempfile
 import os
 import json
+import sys
 
-# Initialize the Terraform working directory
 tf = Terraform(working_dir='.')
 tf.init()
 tf.plan()
@@ -12,10 +12,10 @@ tf.apply(skip_plan=True)
 
 data = tf.output(json=True)
 
-slotNum = 2
-masterPubIp = data["node1_pubip"]["value"]
-secondPubIp = data["node2_pubip"]["value"]
-thirdPubIp = data["node3_pubip"]["value"]
+slotNum = 4
+masterPubIp = data["node_pubips"]["value"][0]
+secondPubIp = data["node_pubips"]["value"][1]
+thirdPubIp = data["node_pubips"]["value"][2]
 
 # Create hosts file
 hostsFile = "../hosts"
