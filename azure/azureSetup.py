@@ -5,10 +5,18 @@ import os
 import json
 import sys
 
+print("Azure NPB Testbench")
+
 tf = Terraform(working_dir='.')
-tf.init()
-tf.plan()
-tf.apply(skip_plan=True)
+
+
+print("Starting init...")
+retcode, stdout, stderr = tf.init()
+print(stderr)
+
+print("Starting apply...")
+retcode, stdout, stderr = tf.apply(skip_plan=True)
+print(stderr)
 
 data = tf.output(json=True)
 
@@ -17,12 +25,16 @@ masterPubIp = data["node_pubips"]["value"][0]
 secondPubIp = data["node_pubips"]["value"][1]
 thirdPubIp = data["node_pubips"]["value"][2]
 
+masterPrivIp = data["node_privips"]["value"][0]
+secondPrivIp = data["node_privips"]["value"][1]
+thirdPrivIp = data["node_privips"]["value"][2]
+
 # Create hosts file
 hostsFile = "../hosts"
 with open(hostsFile, 'w') as file:
-    file.write(f"{masterPubIp} slots={slotNum}\n")
-    file.write(f"{secondPubIp} slots={slotNum}\n")
-    file.write(f"{thirdPubIp} slots={slotNum}\n")
+    file.write(f"{masterPrivIp} slots={slotNum}\n")
+    file.write(f"{secondPrivIp} slots={slotNum}\n")
+    file.write(f"{thirdPrivIp} slots={slotNum}\n")
 
 # Start ansbile runner with special inventory
 scriptDir = os.path.dirname(os.path.abspath(__file__)) 

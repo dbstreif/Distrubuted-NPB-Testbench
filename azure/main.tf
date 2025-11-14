@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 data "azurerm_resource_group" "npbTest-RG" {
-  name     = "NpbTestbench"
+  name = "NpbTestbench"
 }
 
 resource "azurerm_virtual_network" "npb-VNet" {

@@ -10,10 +10,11 @@ data "aws_ami" "ubuntu" {
     values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
   }
 
-  owners = ["099720109477"] # Canonical
+  owners = ["099720109477"]
 }
 
-resource "aws_instance" "Node1" {
+resource "aws_instance" "Node" {
+  count                       = 3
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   key_name                    = var.key_name
@@ -22,33 +23,10 @@ resource "aws_instance" "Node1" {
 
 
   tags = {
-    Name = var.instance1_name
+    Name = "npb-${count.index + 1}"
   }
 }
 
-resource "aws_instance" "Node2" {
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = var.instance_type
-  key_name                    = var.key_name
-  vpc_security_group_ids      = [aws_security_group.npb-SG.id]
-  associate_public_ip_address = true
-
-  tags = {
-    Name = var.instance2_name
-  }
-}
-
-resource "aws_instance" "Node3" {
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = var.instance_type
-  key_name                    = var.key_name
-  vpc_security_group_ids      = [aws_security_group.npb-SG.id]
-  associate_public_ip_address = true
-
-  tags = {
-    Name = var.instance3_name
-  }
-}
 
 resource "aws_default_vpc" "default" {}
 

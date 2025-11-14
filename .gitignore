@@ -6,5 +6,5 @@ cmds
 clientkey.pem
 **/*.tfstate
 **/*.tfstate.*.backup
-*.backup
-*tfstate*
+**/*.backup
+**/*tfstate*
