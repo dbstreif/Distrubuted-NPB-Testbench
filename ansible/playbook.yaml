@@ -63,6 +63,22 @@
        path: /home/ubuntu/npbTests
        state: directory
 
+   - name: Create logging dir
+     ansible.builtin.file:
+       path: /home/ubuntu/logging
+       state: directory
+
+   - name: Create logging output dir
+     ansible.builtin.file:
+       path: /home/ubuntu/logging/output
+       state: directory
+
+   - name: Copy over logging tool
+     ansible.builtin.copy:
+       src: ../logging/monitor_node.sh
+       dest: /home/ubuntu/logging/monitor_node.sh
+       mode: preserve
+
    - name: Make necessary tests
      ansible.builtin.shell: >
       make cg CLASS=S; 
@@ -124,5 +140,12 @@
      ansible.builtin.copy:
        src: ../tests
        dest: ~/
+       mode: preserve
+     when: inventory_hostname == groups['machines'][0]
+
+   - name: Copy over collect tool
+     ansible.builtin.copy:
+       src: ../logging/collect.sh
+       dest: ~/logging/collect.sh
        mode: preserve
      when: inventory_hostname == groups['machines'][0]

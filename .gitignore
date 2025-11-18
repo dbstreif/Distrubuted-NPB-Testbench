@@ -4,7 +4,8 @@ cmds
 .DS_Store
 .terraform.lock.hcl
 clientkey.pem
+aws/aws
 **/*.tfstate
-**/*.tfstate.*.backup
-**/*.backup
-**/*tfstate*
+**/*.tfstate.backup
+*.backup
+*tfstate*
