@@ -3,8 +3,10 @@
 
 HOSTFILE="../hosts"
 DEST_DIR="/home/ubuntu/logging/collected_logs"
-rm -f "$DEST_DIR"/mpilog_summary_*.csv "$DEST_DIR"/mpilog_summary_all.csv 2>/dev/null
+
+# Cleanup
 mkdir -p "$DEST_DIR"
+rm -f "$DEST_DIR"/*
 
 echo "[*] Collecting logs from all nodes..."
 
@@ -16,7 +18,7 @@ for node in $(awk '{print $1}' "$HOSTFILE"); do
 done
 
 # 2. Merge into one
-cat "$DEST_DIR"/mpilog_summary_*.csv > "$DEST_DIR/mpilog_summary_all.csv"
+echo "$DEST_DIR"/mpilog_summary_*.csv >> "$DEST_DIR/mpilog_summary_all.csv"
 
 # 3. Show per-node summaries
 echo
@@ -26,11 +28,11 @@ cat "$DEST_DIR"/mpilog_summary_*.csv
 # 4. Compute cluster-wide averages
 echo
 echo "=== Cluster-wide average ==="
-awk '{cpu+=$2; mem+=$3; util+=$4; kbps+=$5; n++}
+awk '{cpu+=$2; mem+=$3; disk1r+=$4; disk1w+=$5; disk2r+=$6; disk2w+=$7; n++}
      END {
        if (n>0)
-         printf "CPU=%.2f%%  MEM=%.2f%%  DISK_UTIL=%.2f%%  KB/s=%.2f\n",
-                cpu/n, mem/n, util/n, kbps/n;
+         printf "CPU=%.2f%%  MEM=%.2f%%  DISK1_READ=%.2f%KB/s  DISK1_WRITE=%.2f%KB/s  DISK2_READ=%.2f%KB/s  DISK2_WRITE=%.2f%KB/s\n",
+                cpu/n, mem/n, disk1r/n, disk1w/n, disk2r/n, disk2w/n;
        else
          print "No data found."
      }' "$DEST_DIR/mpilog_summary_all.csv"

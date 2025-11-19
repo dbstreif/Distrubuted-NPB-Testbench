@@ -1,33 +1,52 @@
 #!/usr/bin/env bash
-# Sample CPU, MEM, and disk stats once per second while a job runs.
+# Sample CPU, MEM, and disk stats while a job runs.
+
+
+DEST_DIR="/home/ubuntu/logging/output"
+
+# Cleanup
+mkdir -p "$DEST_DIR"
+rm -f "$DEST_DIR"/*
+echo "Cleaned Dirs"
 
 host=$(hostname)
 dev=$(lsblk -ndo NAME,MOUNTPOINT | awk '$2=="/"{print $1;exit}')
 logfile="/home/ubuntu/logging/output/mpilog_${host}.csv"
-mkdir -p ~/logging/output
 
-(
-  while :; do
+# Start sampling
+echo "Get proc"
+until pgrep cg.$1.x >/dev/null; do
+    sleep 0.2
+done
+echo "Proc got"
+
+pid_exist=$(pgrep -n cg.$1.x || true)
+echo "Exist Status: $pid_exist"
+echo "Monitoring..."
+while [ -n "$pid_exist" ]; do
     ts=$(date +%s)
-    cpu=$(mpstat 1 1 | awk '/all/ {print 100-$13}')
+    cpu=$(iostat | awk 'FNR == 4 {print $1}')
     mem=$(free | awk '/Mem:/ {printf "%.2f", ($3/$2)*100}')
-    read util kbps <<<$(iostat -dx -k 1 1 | awk -v d="$dev" '$1==d {printf "%.2f %.2f", $12, $3+$4}')
-    echo "$ts,$cpu,$mem,${util:-0},${kbps:-0}" > "$logfile"
-  done
-) &
-mon_pid=$!
+    disk1r=$(iostat | awk '/xvda/ {print $3}')
+    disk1w=$(iostat | awk '/xvda/ {print $4}')
+    disk2r=$(iostat | awk '/xvdb/ {print $3}')
+    disk2w=$(iostat | awk '/xvdb/ {print $4}')
+    echo "$ts,$cpu,$mem,$disk1r,$disk1w,$disk2r,$disk2w" >> "$logfile"
+    ((count++))
+    sleep 0.5
+    pid_exist=$(pgrep -n cg.$1.x || true)
+done
+echo "Stopped Monitoring"
 
-~/npbTests/cg.$1.x
-rc=$?
+sleep 0.5
 
-kill "$mon_pid" 2>/dev/null
-sleep 0.2
-
+echo "Aggregating Results..."
+# Aggregate Results
 awk -F, -v h="$host" '
-  {cpu+=$2; mem+=$3; util+=$4; kbps+=$5; n++}
+  {cpu+=$2; mem+=$3; disk1r+=$4; disk1w+=$5; disk2r+=$6; disk2w+=$7; n++}
   END {
-    if(n>0) printf "%s %.2f %.2f %.2f %.2f\n", h, cpu/n, mem/n, util/n, kbps/n;
-    else    printf "%s 0 0 0 0\n", h;
+    if(n>0) printf "%s %.2f %.2f %.2f %.2f %.2f %.2f\n", h, cpu/n, mem/n, disk1r/n, disk1w/n, disk2r/n, disk2w/n;
+    else    printf "%s 0 0 0 0 0 0\n", h;
   }' "$logfile" > /home/ubuntu/logging/output/mpilog_summary.csv
 
-exit $rc
+echo "Done"
