@@ -28,6 +28,7 @@
          - libopenmpi-dev
          - openmpi-bin
          - openmpi-doc
+         - sysstat
        state: present
 
 - name: Download, Install, and Setup NPB
